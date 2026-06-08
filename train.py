@@ -37,7 +37,8 @@ def parse_args():
     parser.add_argument("--bce_weight", type=float, default=None)
     parser.add_argument("--batch_size", type=int, default=None)
     parser.add_argument("--epochs", type=int, default=None)
-
+    parser.add_argument("--freeze_encoder", action="store_true", default=None)
+    parser.add_argument("--freeze_layers", type=str, default=None)  # "all" or "partial"
     return parser.parse_args()
 
 
@@ -58,18 +59,17 @@ def main():
         config["training"]["batch_size"] = args.batch_size
     if args.epochs is not None:
         config["training"]["num_epochs"] = args.epochs
+    if args.freeze_encoder:
+        config["training"]["freeze_encoder"] = True
+    if args.freeze_layers is not None:
+        config["training"]["freeze_layers"] = args.freeze_layers
         # Generate unique run name and checkpoint path
     encoder = config["training"]["encoder"]
     lr = config["training"]["learning_rate"]
     bce = config["training"]["bce_weight"]
-    mode = "resize"
+    #mode = "resize_frozen_encoder"
     epochs = config["training"]["num_epochs"]
-    run_name = f"{encoder}_lr{lr}_bce{bce}_{mode}_epochs{epochs}"
 
-    config["training"]["checkpoint_path"] = f"checkpoints/{run_name}/best_model.pth"
-    config["mlflow"]["run_name"] = run_name
-
-    os.makedirs(f"checkpoints/{run_name}", exist_ok=True)
     setup_logging(config)
     logger = logging.getLogger(__name__)
 
@@ -84,6 +84,46 @@ def main():
 
     # Step 3: Build model
     model = build_model(config)
+
+    if config["training"]["freeze_encoder"]:
+        freeze_layers = config["training"].get("freeze_layers", "all")
+        
+        if freeze_layers == "all":
+            for param in model.encoder.parameters():
+                param.requires_grad = False
+            mode = "resize_frozen"
+
+        elif freeze_layers == "partial":
+            # Freeze only early layers — universal features (edges, textures)
+            # layer1 and layer2 learn low-level stuff that transfers from ImageNet
+            # layer3 and layer4 learn high-level features — let these adapt to satellite data
+            for param in model.encoder.layer1.parameters():
+                param.requires_grad = False
+            for param in model.encoder.layer2.parameters():
+                param.requires_grad = False
+            mode = "resize_frozen_partial"
+    else:
+        mode = "resize"
+
+    total = sum(p.numel() for p in model.parameters())
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    frozen = total - trainable
+    print(f"Total:     {total:,}")
+    print(f"Trainable: {trainable:,}")
+    print(f"Frozen:    {frozen:,}")
+    
+    run_name = f"{encoder}_lr{lr}_bce{bce}_{mode}_epochs{epochs}"
+
+    config["training"]["checkpoint_path"] = f"checkpoints/{run_name}/best_model.pth"
+    config["mlflow"]["run_name"] = run_name
+
+    os.makedirs(f"checkpoints/{run_name}", exist_ok=True)
+
+    
+
+    # Verify
+
+    #-------------------------
     logger.info(
         f"Model: {config['training']['model_name']} "
         f"with {config['training']['encoder']} encoder"
@@ -91,9 +131,9 @@ def main():
 
     # Step 4: Optimizer, scheduler, loss
     optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=config["training"]["learning_rate"],
-        weight_decay=config["training"]["weight_decay"],
+    filter(lambda p: p.requires_grad, model.parameters()),
+    lr=config["training"]["learning_rate"],
+    weight_decay=config["training"]["weight_decay"],
     )
 
     # CosineAnnealingLR: learning rate follows cosine curve from lr to eta_min

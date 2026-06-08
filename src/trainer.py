@@ -123,6 +123,8 @@ class Trainer:
                 "lr": self.config["training"]["learning_rate"],
                 "weight_decay": self.config["training"]["weight_decay"],
                 "batch_size": self.config["training"]["batch_size"],
+                "freeze_encoder": self.config["training"]["freeze_encoder"],
+                "freeze_layers": self.config["training"].get("freeze_layers", "none"),
                 "bce_weight": self.config["training"]["bce_weight"],  # ,
                 # "patch_size":  self.config["data"]["patch_size"],
                 # "stride":      self.config["data"]["stride"],

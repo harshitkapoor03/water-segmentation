@@ -22,6 +22,8 @@ training:
   checkpoint_path: "checkpoints/best_model.pth"
   device: "cuda"
   num_workers: 0
+  freeze_encoder: false
+  freeze_layers: "all"    # "all" or "partial"
 
 inference: 
   model_path: "checkpoints/resnet34_lr0.0001_bce0.3_resize_epochs50/best_model.pth"
