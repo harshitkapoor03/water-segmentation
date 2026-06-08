@@ -1,0 +1,12 @@
+.venv/
+venv/
+.git/
+__pycache__/
+*.pyc
+data/
+logs/
+mlruns/
+mlflow.db
+train.py
+requirements_gpu.txt
+tests/

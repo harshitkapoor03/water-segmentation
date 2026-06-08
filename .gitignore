@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+data/
+logs/*.log
+mlruns/
+mlflow.db
+.DS_Store
+Thumbs.db
+.vscode/
+*.code-workspace
