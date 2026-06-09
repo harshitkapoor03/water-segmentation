@@ -25,10 +25,7 @@ def setup_logging(config):
 
 
 def parse_args():
-    """
-    argparse lets you override config values from the command line.
 
-    """
     parser = argparse.ArgumentParser(description="Train water segmentation model")
 
     # default=None means if not provided, we use the config.yaml value
@@ -63,17 +60,17 @@ def main():
         config["training"]["freeze_encoder"] = True
     if args.freeze_layers is not None:
         config["training"]["freeze_layers"] = args.freeze_layers
-        # Generate unique run name and checkpoint path
+        h
     encoder = config["training"]["encoder"]
     lr = config["training"]["learning_rate"]
     bce = config["training"]["bce_weight"]
-    #mode = "resize_frozen_encoder"
+    
     epochs = config["training"]["num_epochs"]
 
     setup_logging(config)
     logger = logging.getLogger(__name__)
 
-    # Determine device
+    
     device_str = config["training"]["device"]
     device = torch.device(
         "cuda" if device_str == "cuda" and torch.cuda.is_available() else "cpu"
@@ -82,7 +79,7 @@ def main():
 
     train_loader, val_loader, test_loader = build_dataloaders_from_raw(config)
 
-    # Step 3: Build model
+    
     model = build_model(config)
 
     if config["training"]["freeze_encoder"]:
@@ -94,9 +91,7 @@ def main():
             mode = "resize_frozen"
 
         elif freeze_layers == "partial":
-            # Freeze only early layers — universal features (edges, textures)
-            # layer1 and layer2 learn low-level stuff that transfers from ImageNet
-            # layer3 and layer4 learn high-level features — let these adapt to satellite data
+            # Freeze only early layers 
             for param in model.encoder.layer1.parameters():
                 param.requires_grad = False
             for param in model.encoder.layer2.parameters():
@@ -120,32 +115,26 @@ def main():
     os.makedirs(f"checkpoints/{run_name}", exist_ok=True)
 
     
-
-    # Verify
-
-    #-------------------------
     logger.info(
         f"Model: {config['training']['model_name']} "
         f"with {config['training']['encoder']} encoder"
     )
 
-    # Step 4: Optimizer, scheduler, loss
+    # Optimizer, scheduler, loss
     optimizer = torch.optim.AdamW(
     filter(lambda p: p.requires_grad, model.parameters()),
     lr=config["training"]["learning_rate"],
     weight_decay=config["training"]["weight_decay"],
     )
 
-    # CosineAnnealingLR: learning rate follows cosine curve from lr to eta_min
-    # T_max = total epochs means one full cosine cycle across training
-    # Large steps early when far from optimum, tiny steps late when fine-tuning
+
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=config["training"]["num_epochs"], eta_min=1e-6
     )
 
     loss_fn = CombinedLoss(bce_weight=config["training"]["bce_weight"])
 
-    # Step 5: Train
+    #  Train
 
     mlflow.set_tracking_uri(config["mlflow"]["tracking_uri"])
     mlflow.set_experiment(config["mlflow"]["experiment_name"])
@@ -153,7 +142,7 @@ def main():
         trainer = Trainer(model, optimizer, scheduler, loss_fn, device, config)
         trainer.fit(train_loader, val_loader)
 
-        # Step 6: Final evaluation on test set
+        #Final evaluation on test set
         logger.info("Evaluating best model on test set...")
         checkpoint = torch.load(config["training"]["checkpoint_path"], map_location=device)
         model.load_state_dict(checkpoint["model_state_dict"])
@@ -176,58 +165,9 @@ def main():
         for k, v in test_totals.items():
             logger.info(f"  {k}: {v / n_batches:.4f}")
         mlflow.log_metrics({f"test_{k}": v / n_batches for k, v in test_totals.items()})
-    # trainer = Trainer(model, optimizer, scheduler, loss_fn, device, config)
-    # trainer.fit(train_loader, val_loader)
-
-    # # Step 6: Final evaluation on test set
-    # logger.info("Evaluating best model on test set...")
-    # checkpoint = torch.load(config["training"]["checkpoint_path"], map_location=device)
-    # model.load_state_dict(checkpoint["model_state_dict"])
-    # model.eval()
-
-    # from src.metrics import compute_all_metrics
-
-    # test_totals = {k: 0.0 for k in ["iou", "dice", "accuracy", "precision", "recall"]}
-
-    # with torch.no_grad():
-    #     for images, masks in test_loader:
-    #         images = images.to(device)
-    #         masks = masks.to(device)
-    #         preds = model(images)
-    #         for k, v in compute_all_metrics(preds, masks).items():
-    #             test_totals[k] += v
-
-    # n_batches = len(test_loader)
-    # logger.info("Test set results:")
-    # for k, v in test_totals.items():
-    #     logger.info(f"  {k}: {v / n_batches:.4f}")
-    # mlflow.log_metrics({f"test_{k}": v / n_batches for k, v in test_totals.items()})
+    
 
 if __name__ == "__main__":
     main()
 
-    # # Step 1: Build patches if they don't exist yet
-    # patches_dir = config["data"]["patches_image_dir"]
-    # if not os.path.exists(patches_dir) or len(os.listdir(patches_dir)) == 0:
-    #     logger.info("No patches found — running tiling pipeline")
-    #     n = build_patches(config)
-    #     logger.info(f"Created {n} patches")
-    # else:
-    #     n_existing = len(os.listdir(patches_dir))
-    #     logger.info(f"Using existing {n_existing} patches")
-    # Step 1: Build patches only if needed
-    # if args.use_patches:
-    #   patches_dir = config["data"]["patches_image_dir"]
-    #   if not os.path.exists(patches_dir) or len(os.listdir(patches_dir)) == 0:
-    #     logger.info("No patches found — running tiling pipeline")
-    #     n = build_patches(config)
-    #     logger.info(f"Created {n} patches")
-    #   else:
-    #     n_existing = len(os.listdir(patches_dir))
-    #     logger.info(f"Using existing {n_existing} patches")
-
-    # Step 2: Build data loaders
-
-    # if args.use_patches:
-    #   train_loader, val_loader, test_loader = build_dataloaders(config)
-    # else:
+ 

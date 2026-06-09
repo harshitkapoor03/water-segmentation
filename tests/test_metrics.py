@@ -38,7 +38,7 @@ def test_precision_recall_perfect():
 
 
 def test_dice_always_gte_iou():
-    # Dice >= IoU always — mathematical property
+    # Dice >= IoU always : mathematical property
     pred   = torch.randn(4, 1, 8, 8)
     target = (torch.randn(4, 1, 8, 8) > 0).float()
     assert dice_score(pred, target) >= iou_score(pred, target) - 1e-5

@@ -38,14 +38,14 @@ class Trainer:
             self.model.eval()
 
         total_loss = 0.0
-        # Dictionary comprehension — creates {key: 0.0} for each metric name
+
         all_metrics = {
             k: 0.0 for k in ["iou", "dice", "accuracy", "precision", "recall"]
         }
 
         # torch.no_grad() tells PyTorch not to track operations for gradients
         # During validation we never call .backward() so there's no reason
-        # to build the computation graph — this halves memory usage
+  
         context = torch.no_grad() if not is_training else torch.enable_grad()
 
         with context:
@@ -56,10 +56,7 @@ class Trainer:
                 masks = masks.to(self.device)
 
                 if is_training:
-                    # Zero out gradients from the previous batch
-                    # PyTorch accumulates gradients by default —
-                    # if you don't zero them, batch N's gradients
-                    # add to batch N-1's, corrupting the update
+                    
                     self.optimizer.zero_grad()
 
                 predictions = self.model(images)
@@ -68,9 +65,7 @@ class Trainer:
                 if is_training:
                     loss.backward()
 
-                    # Gradient clipping: if any gradient vector has magnitude > 1.0,
-                    # scale it down to exactly 1.0. Prevents exploding gradients
-                    # early in training when loss is high and gradients are large.
+                    # Gradient clipping
                     torch.nn.utils.clip_grad_norm_(
                         self.model.parameters(), max_norm=1.0
                     )
@@ -138,8 +133,7 @@ class Trainer:
             val_loss, val_m = self._run_epoch(val_loader, is_training=False)
 
             # Step the scheduler after each epoch
-            # CosineAnnealingLR adjusts learning rate along a cosine curve
-            # Large steps early in training, tiny steps late
+
             self.scheduler.step()
             current_lr = self.optimizer.param_groups[0]["lr"]
 
@@ -151,8 +145,7 @@ class Trainer:
                 f"LR: {current_lr:.2e}"
             )
 
-            # Log metrics to MLflow — one data point per epoch
-            # These become the curves you see in the MLflow UI
+
             mlflow.log_metrics(
                 {
                     "train_loss": train_loss,

@@ -1,4 +1,4 @@
-#import os
+
 import numpy as np
 import pytest
 from PIL import Image
@@ -19,7 +19,7 @@ def make_dummy_data(tmp_path, n=4):
     for i in range(n):
         # Random RGB image
         img_arr  = np.random.randint(0, 255, (300, 300, 3), dtype=np.uint8)
-        # Binary mask — only 0 and 255 values
+        # Binary mask only 0 and 255 values
         mask_arr = np.random.choice([0, 255], (300, 300)).astype(np.uint8)
 
         ip = str(img_dir  / f"img_{i}.png")

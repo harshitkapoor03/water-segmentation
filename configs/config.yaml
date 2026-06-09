@@ -30,9 +30,7 @@ inference:
   threshold: 0.5
   use_tiling: false 
 
-# mlflow:
-#   experiment_name: "water-segmentation"
-#   tracking_uri: "mlruns"
+
 mlflow:
   experiment_name: "water-segmentation"
   tracking_uri: "sqlite:///mlflow.db"

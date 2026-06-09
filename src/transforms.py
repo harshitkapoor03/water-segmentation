@@ -5,7 +5,7 @@ from albumentations.pytorch import ToTensorV2
 def get_train_transforms(image_size=256):
     """
     Augmentations applied randomly to training patches.
-    Each transform has a probability p — it won't always fire.
+    Each transform has a probability p :it won't always fire.
 
     Why each one:
     HorizontalFlip/VerticalFlip — satellites view from above so
@@ -70,10 +70,6 @@ def get_val_transforms(image_size=256):
     No augmentation for validation or test.
     Only resize and normalize.
 
-    If we augmented validation images, our metrics would
-    measure performance on artificially modified images —
-    not what the model will see in the real world.
-    We want validation to reflect true generalisation.
     """
     return A.Compose([
         A.Resize(image_size, image_size),

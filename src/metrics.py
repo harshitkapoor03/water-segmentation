@@ -34,8 +34,8 @@ def dice_score(pred, target, smooth=1e-6):
     We track both because different papers use different metrics.
     Having both makes your results comparable to existing literature.
     """
-    # Note: dice uses soft probabilities (after sigmoid, before threshold)
-    # This makes it differentiable — important when used as a loss function
+
+
     pred_soft    = torch.sigmoid(pred)
     intersection = (pred_soft * target).sum(dim=(2, 3))
     dice = (2 * intersection + smooth) / (
