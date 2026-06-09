@@ -60,7 +60,7 @@ def main():
         config["training"]["freeze_encoder"] = True
     if args.freeze_layers is not None:
         config["training"]["freeze_layers"] = args.freeze_layers
-        h
+    
     encoder = config["training"]["encoder"]
     lr = config["training"]["learning_rate"]
     bce = config["training"]["bce_weight"]
